@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f6f2">
+  <title>Voice Agent</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+  <script type="module" src="/avatar/avatar.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true">✳</span> Voice Agent</div>
+    <button id="settings-button" class="outline" type="button">Settings</button>
+  </header>
+  <main>
+    <section class="avatar-panel" aria-label="Avatar and camera">
+      <div id="avatar-view">
+        <div id="stage-render"></div>
+        <p class="avatar-loading" role="status">Loading Amber…</p>
+        <video id="camera-preview" autoplay muted playsinline hidden aria-label="Camera preview"></video>
+      </div>
+      <div class="camera-controls">
+        <button id="camera-toggle" class="outline" type="button" aria-pressed="false" disabled>Turn on camera</button>
+        <span id="camera-status" role="status">Camera is off</span>
+        <button id="fullscreen-toggle" class="outline" type="button" aria-pressed="false">Fullscreen</button>
+      </div>
+    </section>
+    <section class="voice" aria-labelledby="voice-title">
+      <h1 id="voice-title">Talk to Amber</h1>
+      <p>Tap the microphone to ask a question.</p>
+      <div class="halo">
+        <button id="mic" type="button" aria-label="Turn on microphone" aria-pressed="false">
+          <span class="mic-icon" aria-hidden="true"><span></span></span>
+        </button>
+      </div>
+      <p id="status" role="status">Ready to talk</p>
+      <label class="repeat"><input id="auto" type="checkbox" checked> Keep listening so I can interrupt</label>
+    </section>
+    <section class="chat" aria-labelledby="chat-title">
+      <div class="chat-header">
+        <h2 id="chat-title">Conversation</h2>
+        <button id="reset" class="link" type="button">New conversation</button>
+      </div>
+      <div id="history" role="log" aria-live="off" tabindex="0">
+        <p id="empty">Your messages and Amber’s replies will appear here.</p>
+      </div>
+      <form id="message-form">
+        <textarea id="message" rows="1" required maxlength="8000" aria-label="Message" placeholder="Or type a message"></textarea>
+        <button id="send" type="submit">Send</button>
+        <button id="stop" class="outline" type="button" hidden>Stop</button>
+      </form>
+    </section>
+  </main>
+  <dialog id="settings">
+    <form method="dialog">
+      <div class="chat-header"><h2>Settings</h2><button class="outline" value="close">Close</button></div>
+      <label for="prompt">System prompt</label>
+      <textarea id="prompt" rows="5" maxlength="6000" placeholder="For example, answer in two short sentences"></textarea>
+      <p class="hint">Changing the prompt starts a new conversation.</p>
+      <label class="checkbox"><input type="checkbox" id="speak" checked> Read replies aloud</label>
+      <fieldset id="stage-settings">
+        <legend>Avatar display</legend>
+        <label for="render-angle">Scene rotation</label>
+        <select id="render-angle"><option value="0">0°</option><option value="90">90° clockwise</option><option value="180">180°</option><option value="270">270° clockwise</option></select>
+        <p class="hint">Measure the area visible to the camera at the distance where the speaker usually stands.</p>
+        <label for="tracking-width">Visible width in meters</label>
+        <input id="tracking-width" type="number" min="0.1" max="100" step="any" value="2.4">
+        <label for="tracking-height">Visible height in meters</label>
+        <input id="tracking-height" type="number" min="0.1" max="100" step="any" value="1.8">
+        <label for="tracking-distance">Distance to speaker in meters</label>
+        <input id="tracking-distance" type="number" min="0.1" max="100" step="any" value="2">
+      </fieldset>
+      <h3>MCP</h3>
+      <p id="mcp-status" class="hint">Checking Codex settings…</p>
+      <p class="hint">To connect an MCP server, run this on the host:</p>
+      <code>codex mcp add name --url https://example.com/mcp</code>
+      <p class="hint">Restart the site after changing the configuration.</p>
+    </form>
+  </dialog>
+</body>
+</html>

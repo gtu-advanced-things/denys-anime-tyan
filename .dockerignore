@@ -1,0 +1,14 @@
+*
+!Dockerfile
+!package.json
+!package-lock.json
+!server.mjs
+!codex.mjs
+!guide-mcp.mjs
+!gtu-prompt.txt
+!gtu-posters.json
+!web/
+!web/**
+!public/
+!public/**
+public/avatar/avatar.js

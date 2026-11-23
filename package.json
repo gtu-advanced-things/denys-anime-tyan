@@ -1,0 +1,22 @@
+{
+  "name": "denys-voice",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "build": "esbuild web/avatar.js --bundle --format=esm --minify --outfile=public/avatar/avatar.js",
+    "check": "node --check server.mjs && node --check codex.mjs && node --check public/app.js && node --check public/mic-recorder.js && node --check public/pcm-player.js && node --check web/avatar.js && node --check web/camera.js && node --check web/gestures.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "0.10.32",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "esbuild": "0.25.12",
+    "three": "0.183.2",
+    "ws": "^8.23.0",
+    "zod": "^3.25.76"
+  }
+}

@@ -1,0 +1,24 @@
+services:
+  voice:
+    build: .
+    init: true
+    restart: unless-stopped
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"
+    ports:
+      - "0.0.0.0:22004:22004"
+    environment:
+      CODEX_HOME: /codex
+      HOME: /tmp
+      CODEX_MODEL: ${CODEX_MODEL:-gpt-6.2-sol}
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-}
+      SITE_PASSWORD: ${SITE_PASSWORD:-}
+      TTS_URL: ${TTS_URL:-}
+      LIVE_STT_URL: ws://172.25.0.1:22105/live
+      STT_URL: http://stt:8000/transcribe
+    volumes:
+      - "${CODEX_HOME:-${HOME}/.codex}:/codex"
+
+  stt:
+    build: ./stt
+    init: true
+    restart: unless-stopped
