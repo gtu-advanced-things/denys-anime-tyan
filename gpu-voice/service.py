@@ -18,6 +18,13 @@ torch.set_num_threads(2)
 model = FasterQwen3TTS.from_pretrained(
     os.environ["QWEN_TTS_MODEL"], dtype=torch.bfloat16, local_files_only=True,
 )
+# An aligned speech excerpt supplies acoustic context for pacing and prosody.
+reference = profile.with_name("prosody.wav")
+reference_text = ""
+if reference.exists():
+    reference_text = reference.with_suffix(".txt").read_text().strip()
+    example = model.model.create_voice_clone_prompt(ref_audio=str(reference), ref_text=reference_text)[0]
+    voice_prompt.update(ref_code=[example.ref_code], x_vector_only_mode=[False], icl_mode=[True])
 lock = threading.Lock()
 app = FastAPI()
 sample_rate = 24000
@@ -25,8 +32,8 @@ sample_rate = 24000
 
 def encode(text):
     for audio, rate, _ in model.generate_voice_clone_streaming(
-        text=text, language="English", voice_clone_prompt=voice_prompt,
-        chunk_size=4, max_new_tokens=600, temperature=0.7,
+        text=text, language="English", voice_clone_prompt=voice_prompt, ref_text=reference_text,
+        chunk_size=4, max_new_tokens=min(900, max(36, len(text) * 2 + 24)), temperature=0.7,
     ):
         if rate != sample_rate:
             raise RuntimeError(f"Unexpected sample rate: {rate}")

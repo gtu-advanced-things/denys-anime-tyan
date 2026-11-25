@@ -75,7 +75,10 @@ export class PcmPlayer {
         const rate = Number(response.headers.get('X-Sample-Rate'))
         let trailing
         let received = false
-        for await (const bytes of response.body) {
+        const reader = response.body.getReader()
+        while (true) {
+          const { value: bytes, done } = await reader.read()
+          if (done) break
           if (controller.signal.aborted) return
           const chunk = new Uint8Array(bytes.length + (trailing === undefined ? 0 : 1))
           if (trailing !== undefined) chunk[0] = trailing

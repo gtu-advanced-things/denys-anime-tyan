@@ -75,7 +75,7 @@ docker compose up -d --build
 сайт отменяет запрос и очищает очередь. При пустом `TTS_URL` используется
 встроенная озвучка браузера.
 
-Голос Amber хранится в `gpu-voice/amber.safetensors`. Вектор диктора обучен на речевых фрагментах четырёх очищенных записей при фиксированных весах базовой модели. Готовый профиль загружается вместе с сервисом. Для повторного обучения подготовьте моно WAV 24 кГц и запустите `python gpu-voice/fit-speaker.py gpu-voice/amber.safetensors recordings/*.wav` с заданным QWEN_TTS_MODEL и установленными faster-whisper, scipy и soundfile. Для ответов используется
+Голос Amber хранится в `gpu-voice/amber.safetensors`. Вектор диктора обучен на речевых фрагментах четырёх очищенных записей при фиксированных весах базовой модели. Готовый профиль загружается вместе с сервисом. Для переноса интонации сервис также поддерживает локальные prosody.wav (короткий чистый фрагмент речи) и prosody.txt (его точная расшифровка) рядом с amber.safetensors. На рабочем GPU эти файлы установлены. Для повторного обучения подготовьте моно WAV 24 кГц и запустите `python gpu-voice/fit-speaker.py gpu-voice/amber.safetensors recordings/*.wav` с заданным QWEN_TTS_MODEL и установленными faster-whisper, scipy и soundfile. Для ответов используется
 Qwen3-TTS 0.6B Base через Faster Qwen3-TTS 0.3.0, с прогревом CUDA graphs
 и готовым профилем диктора. На GPU-хосте нужны совместимые CUDA и PyTorch,
 Python 3.12 и следующие пакеты:

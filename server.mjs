@@ -91,31 +91,40 @@ async function transcribe(req, res, language) {
 async function speech(req, res) {
   let input
   try { input = await readInput(req) } catch { return res.writeHead(400).end() }
-  if (input.text.length > 500) return res.writeHead(400).end()
+
 
   if (!ttsUrl) return res.writeHead(503).end()
   const controller = new AbortController()
   const abort = () => controller.abort()
   res.once('close', abort)
   try {
-    const upstream = await fetch(ttsUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: input.text }),
-      signal: AbortSignal.any([controller.signal, AbortSignal.timeout(30_000)]),
-      redirect: 'error'
-    })
-    const rate = Number(upstream.headers.get('X-Sample-Rate'))
-    if (!upstream.ok || !upstream.body || !Number.isInteger(rate) || rate < 8000 || rate > 48000) {
-      await upstream.body?.cancel()
-      return res.writeHead(502).end()
+    // Also support clients that submit an entire passage in one request.
+    let remaining = input.text.trim()
+    while (remaining) {
+      let end = Math.min(240, remaining.length)
+      if (end < remaining.length) {
+        const prefix = remaining.slice(0, end)
+        const boundary = [...prefix.matchAll(/[.!?]\s+|[,;:]\s+/g)].at(-1)
+        end = boundary ? boundary.index + 1 : prefix.lastIndexOf(' ') || end
+        if (end < 1) end = prefix.length
+      }
+      const phrase = remaining.slice(0, end)
+      remaining = remaining.slice(end).trimStart()
+      const upstream = await fetch(ttsUrl, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: phrase }),
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(120_000)]),
+        redirect: 'error'
+      })
+      if (!upstream.ok || !upstream.body || Number(upstream.headers.get('X-Sample-Rate')) !== 24000) {
+        await upstream.body?.cancel()
+        throw new Error('Voice stream unavailable')
+      }
+      if (!res.headersSent) res.writeHead(200, { 'Content-Type': 'application/octet-stream',
+        'X-Sample-Rate': '24000', 'X-Accel-Buffering': 'no' })
+      await pipeline(upstream.body, res, { end: false, signal: controller.signal })
     }
-    res.writeHead(200, {
-      'Content-Type': 'application/octet-stream',
-      'X-Sample-Rate': String(rate),
-      'X-Accel-Buffering': 'no'
-    })
-    await pipeline(upstream.body, res)
+    res.end()
   } catch {
     if (res.destroyed) return
     if (res.headersSent) res.destroy()

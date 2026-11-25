@@ -20,9 +20,9 @@ createServer(async (req, res) => {
 
   const child = spawn('ssh', [
     '-T', '-S', socket, '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=4', sshHost,
-    "curl -fsS --no-buffer --max-time 26 -H 'Content-Type: application/json' --data-binary @- http://127.0.0.1:22104/speak"
+    "curl -fsS --no-buffer --max-time 110 -H 'Content-Type: application/json' --data-binary @- http://127.0.0.1:22104/speak"
   ], { stdio: ['pipe', 'pipe', 'inherit'] })
-  const timeout = setTimeout(() => child.kill(), 28_000)
+  const timeout = setTimeout(() => child.kill(), 115_000)
   res.once('close', () => child.kill())
   child.stdin.on('error', () => {})
   child.stdin.end(body)
