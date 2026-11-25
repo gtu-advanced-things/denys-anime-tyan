@@ -6,6 +6,8 @@ import threading
 from pathlib import Path
 
 from safetensors.torch import load_file
+import numpy as np
+import soxr
 import torch
 from faster_qwen3_tts import FasterQwen3TTS
 from fastapi import FastAPI
@@ -33,13 +35,21 @@ sample_rate = 24000
 
 
 def encode(text):
+    # On matched phrases the reference voice is about half a semitone higher.
+    # Keep one resampler per utterance so chunk boundaries stay continuous.
+    resampler = soxr.ResampleStream(sample_rate * 1.03, sample_rate, 1, dtype="float32")
     for audio, rate, _ in model.generate_voice_clone_streaming(
         text=text, language="Russian", voice_clone_prompt=voice_prompt, ref_text=reference_text,
         chunk_size=4, max_new_tokens=min(900, max(36, len(text) * 2 + 24)), temperature=0.7,
     ):
         if rate != sample_rate:
             raise RuntimeError(f"Unexpected sample rate: {rate}")
-        yield (audio.clip(-1, 1) * 32767).astype("<i2").tobytes()
+        samples = resampler.resample_chunk(audio.reshape(-1).astype("float32"))
+        if len(samples):
+            yield (samples.clip(-1, 1) * 32767).astype("<i2").tobytes()
+    tail = resampler.resample_chunk(np.empty(0, dtype="float32"), last=True)
+    if len(tail):
+        yield (tail.clip(-1, 1) * 32767).astype("<i2").tobytes()
 
 
 # Capture the CUDA graphs and cache the speaker prompt before serving requests.
