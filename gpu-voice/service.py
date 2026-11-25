@@ -1,5 +1,7 @@
 """Stream signed 16-bit little-endian mono PCM from a warmed Qwen3-TTS model."""
+import asyncio
 import os
+from concurrent.futures import ThreadPoolExecutor
 import threading
 from pathlib import Path
 
@@ -25,7 +27,7 @@ if reference.exists():
     reference_text = reference.with_suffix(".txt").read_text().strip()
     example = model.model.create_voice_clone_prompt(ref_audio=str(reference), ref_text=reference_text)[0]
     voice_prompt.update(ref_code=[example.ref_code], x_vector_only_mode=[False], icl_mode=[True])
-lock = threading.Lock()
+synthesis = ThreadPoolExecutor(max_workers=1, thread_name_prefix="speech-gpu")
 app = FastAPI()
 sample_rate = 24000
 
@@ -41,8 +43,12 @@ def encode(text):
 
 
 # Capture the CUDA graphs and cache the speaker prompt before serving requests.
-for _ in encode("Hello. It is good to hear from you."):
-    pass
+def warm_up():
+    for _ in encode("Hello. It is good to hear from you."):
+        pass
+
+
+synthesis.submit(warm_up).result()
 
 
 class Speech(BaseModel):
@@ -50,10 +56,43 @@ class Speech(BaseModel):
 
 
 @app.post("/speak")
-def speak(request: Speech):
-    def stream():
-        with lock:
-            yield from encode(request.text)
+async def speak(request: Speech):
+    async def stream():
+        loop = asyncio.get_running_loop()
+        chunks = asyncio.Queue()
+        stopped = threading.Event()
+
+        # The worker owns the entire generator lifetime. A disconnected HTTP
+        # reader can never leave a paused generator holding the GPU lock.
+        def produce():
+            try:
+                if stopped.is_set():
+                    return
+                audio = encode(request.text)
+                try:
+                    for chunk in audio:
+                        if stopped.is_set():
+                            break
+                        loop.call_soon_threadsafe(chunks.put_nowait, chunk)
+                finally:
+                    audio.close()
+            except Exception as error:
+                loop.call_soon_threadsafe(chunks.put_nowait, error)
+            finally:
+                loop.call_soon_threadsafe(chunks.put_nowait, None)
+
+        job = synthesis.submit(produce)
+        try:
+            while True:
+                chunk = await chunks.get()
+                if chunk is None:
+                    break
+                if isinstance(chunk, Exception):
+                    raise chunk
+                yield chunk
+        finally:
+            stopped.set()
+            job.cancel()
 
     return StreamingResponse(
         stream(),
