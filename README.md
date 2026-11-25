@@ -75,21 +75,18 @@ docker compose up -d --build
 сайт отменяет запрос и очищает очередь. При пустом `TTS_URL` используется
 встроенная озвучка браузера.
 
-Голос создан один раз в Qwen3-TTS VoiceDesign. Для ответов используется
+Голос Amber хранится в `gpu-voice/amber.safetensors`. Вектор диктора обучен на речевых фрагментах четырёх очищенных записей при фиксированных весах базовой модели. Готовый профиль загружается вместе с сервисом. Для повторного обучения подготовьте моно WAV 24 кГц и запустите `python gpu-voice/fit-speaker.py gpu-voice/amber.safetensors recordings/*.wav` с заданным QWEN_TTS_MODEL и установленными faster-whisper, scipy и soundfile. Для ответов используется
 Qwen3-TTS 0.6B Base через Faster Qwen3-TTS 0.3.0, с прогревом CUDA graphs
-и кэшированным референсом. На GPU-хосте нужны совместимые CUDA и PyTorch,
+и готовым профилем диктора. На GPU-хосте нужны совместимые CUDA и PyTorch,
 Python 3.12 и следующие пакеты:
 
 ```bash
 python3 -m venv .voice-venv
 . .voice-venv/bin/activate
 pip install qwen-tts==0.1.1 faster-qwen3-tts==0.3.0 fastapi uvicorn
-python gpu-voice/design.py voice-reference
 hf download Qwen/Qwen3-TTS-12Hz-0.6B-Base --local-dir qwen-base
 
 export QWEN_TTS_MODEL="$PWD/qwen-base"
-export VOICE_WAV="$PWD/voice-reference/reference.wav"
-export VOICE_TRANSCRIPT="$PWD/voice-reference/reference.txt"
 uvicorn --app-dir gpu-voice service:app --host 127.0.0.1 --port 22104
 ```
 

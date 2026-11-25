@@ -3,16 +3,16 @@ import os
 import threading
 from pathlib import Path
 
+from safetensors.torch import load_file
 import torch
 from faster_qwen3_tts import FasterQwen3TTS
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-reference = os.environ["VOICE_WAV"]
-transcript = Path(os.environ["VOICE_TRANSCRIPT"]).read_text(encoding="utf-8").strip()
-if not transcript or not torch.cuda.is_available():
-    raise RuntimeError("A reference transcript and CUDA are required")
+profile = Path(__file__).with_name("amber.safetensors")
+speaker = load_file(str(profile))["speaker"].to(device="cuda", dtype=torch.bfloat16)
+voice_prompt = {"ref_spk_embedding": [speaker], "x_vector_only_mode": [True]}
 
 torch.set_num_threads(2)
 model = FasterQwen3TTS.from_pretrained(
@@ -25,7 +25,7 @@ sample_rate = 24000
 
 def encode(text):
     for audio, rate, _ in model.generate_voice_clone_streaming(
-        text=text, language="English", ref_audio=reference, ref_text=transcript,
+        text=text, language="English", voice_clone_prompt=voice_prompt,
         chunk_size=4, max_new_tokens=600, temperature=0.7,
     ):
         if rate != sample_rate:
