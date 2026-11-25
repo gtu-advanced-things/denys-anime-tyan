@@ -12,7 +12,7 @@ const stop = byId('stop')
 const reset = byId('reset')
 const settings = byId('settings')
 const prompt = byId('prompt')
-const speechLanguage = 'en-US'
+const replyLanguage = 'ru-RU'
 const speak = byId('speak')
 const auto = byId('auto')
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -99,9 +99,9 @@ function playNext() {
   if (speaking || !speechQueue.length) return
   const generation = speechGeneration
   const utterance = new SpeechSynthesisUtterance(speechQueue.shift())
-  utterance.lang = speechLanguage
+  utterance.lang = replyLanguage
   const voices = synthesis.getVoices()
-  const matches = (voice) => voice.lang.toLowerCase().startsWith(speechLanguage.slice(0, 2).toLowerCase())
+  const matches = (voice) => voice.lang.toLowerCase().startsWith(replyLanguage.slice(0, 2).toLowerCase())
   utterance.voice = voices.find((voice) => voice.localService && matches(voice)) ??
     voices.find(matches) ?? null
   speaking = true
@@ -272,7 +272,7 @@ function listen() {
   cancelSpeech()
   const capture = new Recognition()
   recognition = capture
-  capture.lang = speechLanguage
+  capture.lang = 'en-US'
   capture.interimResults = false
   let transcript = ''
   let failed = false

@@ -34,7 +34,7 @@ sample_rate = 24000
 
 def encode(text):
     for audio, rate, _ in model.generate_voice_clone_streaming(
-        text=text, language="English", voice_clone_prompt=voice_prompt, ref_text=reference_text,
+        text=text, language="Russian", voice_clone_prompt=voice_prompt, ref_text=reference_text,
         chunk_size=4, max_new_tokens=min(900, max(36, len(text) * 2 + 24)), temperature=0.7,
     ):
         if rate != sample_rate:
@@ -44,7 +44,7 @@ def encode(text):
 
 # Capture the CUDA graphs and cache the speaker prompt before serving requests.
 def warm_up():
-    for _ in encode("Hello. It is good to hear from you."):
+    for _ in encode("Здравствуйте. Рада вас слышать."):
         pass
 
 

@@ -196,7 +196,7 @@ Use these as models for pacing and follow-through. Adapt the words to what the p
 
 ## Reference links
 
-The reference was checked on 23 November 2026. Prefer a current, specific source for details that can change. Keep links internal. Give the source name in spoken English when relevant.
+The reference was checked on 23 November 2026. Prefer a current, specific source for details that can change. Keep links internal. Give the source name in spoken Russian when relevant.
 
 - G1 — [Shartava Laboratory, detailed English directory](https://gtu.ge/ims/en/resources/shartava-lab.php)
 - G2 — [Shartava Laboratory, Georgian constituent list and projects](https://gtu.ge/ims/resources/shartava-lab.php)
